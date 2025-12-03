@@ -4,20 +4,32 @@ __pycache__/
 *.pyo
 *.pyd
 
+# Local test artifacts
+tests/__pycache__/
+.pytest_cache/
+
 # Ignore virtual environments
 .venv/
 venv/
 env/
 ENV/
+.env.local
 
-# Ignore VS Code settings
+# Ignore editor / IDE settings
 .vscode/
+.idea/
 
 # Ignore environment files and configs
 .env
+.env.*
 *.cfg
 *.ini
 *.log
+
+# Project-specific generated files
+src/slither_sprint/player_settings.json
+SlitherSprintGame/
+*.spec
 
 # Ignore executables and binaries
 *.exe

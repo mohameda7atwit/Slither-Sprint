@@ -7,6 +7,7 @@ from model.snake import Snake
 from model.obstacles import Obstacles
 from model.apple import Apple
 from model.pane import Pane
+from settings import load_player_colors
 from config import (
     PANE1_X0,
     PANE1_X1,
@@ -42,12 +43,25 @@ class GameState:
 
     def reset(self):
         """Reset game to initial state"""
-        # Create snakes
+        # Load any customized player colors
+        colors = load_player_colors()
+
+        # Create snakes with customized colors and names
         self.snake1 = Snake(
-            self.pane1, (self.pane1.x0 + self.pane1.x1) // 2, 0, P1_COLOR, P1_HEAD, "P1"
+            self.pane1,
+            (self.pane1.x0 + self.pane1.x1) // 2,
+            0,
+            colors["P1"]["body"],
+            colors["P1"]["head"],
+            colors["P1"].get("name", "P1"),
         )
         self.snake2 = Snake(
-            self.pane2, (self.pane2.x0 + self.pane2.x1) // 2, 0, P2_COLOR, P2_HEAD, "P2"
+            self.pane2,
+            (self.pane2.x0 + self.pane2.x1) // 2,
+            0,
+            colors["P2"]["body"],
+            colors["P2"]["head"],
+            colors["P2"].get("name", "P2"),
         )
 
         # Create obstacles

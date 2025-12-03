@@ -100,3 +100,7 @@ src/
 
 ## Credits
 Developed by the Slither Sprint team.
+
+Sound Effect by <a href="https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=6104">freesound_community</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=6104">Pixabay</a>
+
+Sound Effect by <a href="https://pixabay.com/users/darren_hirst-47836735/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=355954">Darren Hirst</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=355954">Pixabay</a>

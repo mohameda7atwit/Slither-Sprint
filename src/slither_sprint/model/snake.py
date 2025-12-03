@@ -19,8 +19,11 @@ class Snake:
 
     def __init__(self, pane: Pane, x: int, y: int, body_col, head_col, name: str):
         self.pane = pane
+        # Body segments, index 0 is the head
         self.body = [(x, y + i) for i in range(SNAKE_LEN)]
+        # Movement: always moving up (negative Y). X shifts are lane changes.
         self.dx, self.dy = 0, -1
+        self.pending_dx = 0  # one-step horizontal move requested from input
         self.body_col = body_col
         self.head_col = head_col
         self.name = name
@@ -31,6 +34,12 @@ class Snake:
         self.powerup_end_time = 0
         self.base_step_ms = STEP_MS
         self.current_step_ms = STEP_MS
+
+        # History of head positions so the body can follow the path smoothly
+        # Most recent positions are at the end of the list.
+        self.history = [self.body[0]]
+        # How many history samples to skip between each body segment
+        self._history_gap = 1
 
     @property
     def head(self):
@@ -45,10 +54,11 @@ class Snake:
             left: True if steering left
             right: True if steering right
         """
+        # We interpret steering as a one-cell lane change request.
         if left:
-            self.dx = -1
+            self.pending_dx = -1
         elif right:
-            self.dx = 1
+            self.pending_dx = 1
 
     def collect_apple(self):
         """Collect a red apple and check for speed boost"""
@@ -92,23 +102,46 @@ class Snake:
         return self.active_powerup == PowerUpType.INVINCIBILITY
 
     def step(self):
-        """Move the snake forward one step"""
+        """Move the snake forward one step using head-path history."""
         if not self.alive:
             return
 
         self.steps += 1
+
+        # Record current head position before moving so the body can follow it
         hx, hy = self.head
-        nx, ny = hx + self.dx, hy + self.dy
+        self.history.append((hx, hy))
+
+        # Apply any pending horizontal move for this step only
+        move_dx = self.pending_dx
+        self.pending_dx = 0
+
+        nx, ny = hx + move_dx, hy + self.dy
 
         # Check boundary collision
         if not self.pane.inside(nx, ny):
             self.alive = False
             return
 
-        # Move snake
-        self.body.insert(0, (nx, ny))
-        while len(self.body) > SNAKE_LEN:
-            self.body.pop()
+        # Move head to its new position
+        self.body[0] = (nx, ny)
+
+        # Update the rest of the body to follow the recorded head path.
+        # Each segment looks further back in the history so they are spaced apart.
+        for i in range(1, len(self.body)):
+            # How far back in history this segment should look
+            offset = i * self._history_gap
+            if offset <= len(self.history):
+                self.body[i] = self.history[-offset]
+            else:
+                # Not enough history yet, just extend from previous segment
+                self.body[i] = self.body[i - 1]
+
+        # Trim history so it doesn't grow without bound. We only need enough
+        # samples to cover the current snake length plus a small buffer.
+        max_history = (len(self.body) + 1) * self._history_gap
+        if len(self.history) > max_history:
+            self.history = self.history[-max_history:]
 
         # Check self-collision
         if self.head in self.body[1:]:
