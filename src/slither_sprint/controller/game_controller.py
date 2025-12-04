@@ -6,6 +6,7 @@ import pygame
 import random
 from pathlib import Path
 from model.game_state import GameState
+from model.game_mode import GameMode
 from view.renderer import Renderer
 from settings import load_player_colors, save_player_colors, COLOR_PRESETS
 from config import (
@@ -34,6 +35,7 @@ class GameController:
 
         self.acc_ms_p1 = 0
         self.acc_ms_p2 = 0
+        self.game_mode = GameMode.MENU
         self.in_start_menu = True
         self.in_customize_menu = False
         self.custom_colors = load_player_colors()
@@ -62,12 +64,8 @@ class GameController:
                 running = False
                 continue
 
-            # Update game only when not in menus
-            if (
-                not self.in_start_menu
-                and not self.in_customize_menu
-                and self.game_state.winner_text is None
-            ):
+            # Update game only when playing (not paused or in menus)
+            if self.game_mode == GameMode.PLAYING and self.game_state.winner_text is None:
                 self._update_game(dt)
 
             # Handle resuming music after one-shot effects
@@ -81,6 +79,7 @@ class GameController:
                 in_customize_menu=self.in_customize_menu,
                 customize_state=self.custom_colors,
                 is_muted=self.music_muted,
+                is_paused=(self.game_mode == GameMode.PAUSED),
             )
 
     def _handle_events(self):
@@ -189,6 +188,14 @@ class GameController:
                         self.in_start_menu = False
                     continue
 
+                # Pause/unpause when in game
+                if event.key == pygame.K_p and not self.in_start_menu:
+                    if self.game_mode == GameMode.PLAYING:
+                        self.game_mode = GameMode.PAUSED
+                    elif self.game_mode == GameMode.PAUSED:
+                        self.game_mode = GameMode.PLAYING
+                    continue
+
                 # Restart when in game (or after win)
                 if event.key == pygame.K_r:
                     self.game_state.reset()
@@ -196,8 +203,8 @@ class GameController:
                     self.acc_ms_p2 = 0
                     self.in_start_menu = False
 
-        # Handle continuous key presses for steering (only when game is running)
-        if not self.in_start_menu and not self.in_customize_menu:
+        # Handle continuous key presses for steering (only when playing)
+        if self.game_mode == GameMode.PLAYING:
             keys = pygame.key.get_pressed()
             self.game_state.snake1.steer(keys[pygame.K_a], keys[pygame.K_d])
             self.game_state.snake2.steer(keys[pygame.K_LEFT], keys[pygame.K_RIGHT])
@@ -214,6 +221,7 @@ class GameController:
         self.acc_ms_p2 = 0
         self.in_start_menu = False
         self.in_customize_menu = False
+        self.game_mode = GameMode.PLAYING
 
     def _handle_customize_keys(self, key):
         """Handle key events while in the customization menu."""
@@ -414,21 +422,30 @@ class GameController:
 
     def _check_win_conditions(self):
         """Check if game has ended"""
+        # Only check once - prevent duplicate score increments
+        if self.game_state.winner_text is not None:
+            return
+
         s1 = self.game_state.snake1
         s2 = self.game_state.snake2
 
         # Check for finish line
         if s1.alive and s1.head[1] <= FINISH_LINE_DISTANCE:
             self.game_state.winner_text = f"{s1.name.upper()} wins"
+            self.game_state.score_p1 += 1
         elif s2.alive and s2.head[1] <= FINISH_LINE_DISTANCE:
             self.game_state.winner_text = f"{s2.name.upper()} wins"
+            self.game_state.score_p2 += 1
         # Check for crashes
         elif not s1.alive and s2.alive:
             self.game_state.winner_text = f"{s2.name.upper()} wins"
+            self.game_state.score_p2 += 1
         elif not s2.alive and s1.alive:
             self.game_state.winner_text = f"{s1.name.upper()} wins"
+            self.game_state.score_p1 += 1
         elif not s1.alive and not s2.alive:
             self.game_state.winner_text = "Draw"
+            # No score increment for draws
 
     # --- Audio helpers -------------------------------------------------
 
