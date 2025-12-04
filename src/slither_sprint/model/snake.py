@@ -35,6 +35,12 @@ class Snake:
         self.base_step_ms = STEP_MS
         self.current_step_ms = STEP_MS
 
+        # Boom effect tracking for visual effects
+        self.invincibility_boom_start_time = 0
+        self.invincibility_boom_duration = 300  # 300ms boom effect
+        self.speed_boost_boom_start_time = 0
+        self.speed_boost_boom_duration = 300  # 300ms boom effect
+
         # History of head positions so the body can follow the path smoothly
         # Most recent positions are at the end of the list.
         self.history = [self.body[0]]
@@ -83,9 +89,11 @@ class Snake:
         if powerup_type == PowerUpType.SPEED_BOOST:
             self.powerup_end_time = current_time + SPEED_BOOST_DURATION
             self.current_step_ms = int(self.base_step_ms * 0.7)  # 30% faster
+            self.speed_boost_boom_start_time = current_time  # Trigger boom effect
         elif powerup_type == PowerUpType.INVINCIBILITY:
             self.powerup_end_time = current_time + INVINCIBILITY_DURATION
             self.current_step_ms = self.base_step_ms
+            self.invincibility_boom_start_time = current_time  # Trigger boom effect
         else:
             self.powerup_end_time = 0
             self.current_step_ms = self.base_step_ms
@@ -100,6 +108,68 @@ class Snake:
     def is_invincible(self):
         """Check if snake is currently invincible"""
         return self.active_powerup == PowerUpType.INVINCIBILITY
+
+    def get_boom_intensity(self):
+        """Get the current invincibility boom effect intensity (0.0 to 1.0)"""
+        current_time = pygame.time.get_ticks()
+
+        # Initial boom effect
+        if self.invincibility_boom_start_time > 0:
+            elapsed = current_time - self.invincibility_boom_start_time
+            if elapsed < self.invincibility_boom_duration:
+                # Start strong and fade out
+                progress = elapsed / self.invincibility_boom_duration
+                return 1.0 - progress
+
+        # Warning pulses when power-up is about to expire
+        if self.active_powerup == PowerUpType.INVINCIBILITY:
+            time_remaining = self.powerup_end_time - current_time
+            # Add 3 warning pulses in the last 900ms (300ms per pulse)
+            if 0 < time_remaining <= 900:
+                pulse_duration = 150  # Each pulse lasts 150ms
+                pulse_gap = 300  # 300ms total per pulse cycle (150ms on, 150ms off)
+
+                # Calculate which pulse we're in
+                time_in_warning = 900 - time_remaining
+                pulse_position = time_in_warning % pulse_gap
+
+                if pulse_position < pulse_duration:
+                    # We're in a pulse
+                    progress = pulse_position / pulse_duration
+                    return 0.7 * (1.0 - progress)  # Pulse intensity: 0.7 -> 0
+
+        return 0.0
+
+    def get_speed_boost_boom_intensity(self):
+        """Get the current speed boost boom effect intensity (0.0 to 1.0)"""
+        current_time = pygame.time.get_ticks()
+
+        # Initial boom effect
+        if self.speed_boost_boom_start_time > 0:
+            elapsed = current_time - self.speed_boost_boom_start_time
+            if elapsed < self.speed_boost_boom_duration:
+                # Start strong and fade out
+                progress = elapsed / self.speed_boost_boom_duration
+                return 1.0 - progress
+
+        # Warning pulses when power-up is about to expire
+        if self.active_powerup == PowerUpType.SPEED_BOOST:
+            time_remaining = self.powerup_end_time - current_time
+            # Add 3 warning pulses in the last 900ms (300ms per pulse)
+            if 0 < time_remaining <= 900:
+                pulse_duration = 150  # Each pulse lasts 150ms
+                pulse_gap = 300  # 300ms total per pulse cycle (150ms on, 150ms off)
+
+                # Calculate which pulse we're in
+                time_in_warning = 900 - time_remaining
+                pulse_position = time_in_warning % pulse_gap
+
+                if pulse_position < pulse_duration:
+                    # We're in a pulse
+                    progress = pulse_position / pulse_duration
+                    return 0.7 * (1.0 - progress)  # Pulse intensity: 0.7 -> 0
+
+        return 0.0
 
     def step(self):
         """Move the snake forward one step using head-path history."""

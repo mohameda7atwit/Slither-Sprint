@@ -58,6 +58,7 @@ class Renderer:
         in_customize_menu: bool = False,
         customize_state=None,
         is_muted: bool = False,
+        is_paused: bool = False,
     ):
         """
         Render the complete game state
@@ -81,21 +82,59 @@ class Renderer:
 
         # Draw Player 1's view
         self.screen.set_clip(self.clip_p1)
+        # Add invincibility background tint
+        if game_state.snake1.is_invincible():
+            self._draw_invincibility_background(self.clip_p1)
         self._draw_finish_line(game_state.camera_y_p1, self.clip_p1)
-        self._draw_obstacles(game_state.obstacles, game_state.camera_y_p1, self.clip_p1)
+        self._draw_obstacles(
+            game_state.obstacles,
+            game_state.camera_y_p1,
+            self.clip_p1,
+            game_state.snake1,
+        )
         self._draw_apples_for_pane(
-            game_state.apples, game_state.pane1, game_state.camera_y_p1, self.clip_p1
+            game_state.apples,
+            game_state.pane1,
+            game_state.camera_y_p1,
+            self.clip_p1,
+            game_state.snake1,
         )
         self._draw_snake(game_state.snake1, game_state.camera_y_p1, self.clip_p1)
+        # Add boom overlays
+        boom_intensity = game_state.snake1.get_boom_intensity()
+        if boom_intensity > 0:
+            self._draw_invincibility_boom_overlay(self.clip_p1, boom_intensity)
+        speed_boom_intensity = game_state.snake1.get_speed_boost_boom_intensity()
+        if speed_boom_intensity > 0:
+            self._draw_speed_boost_boom_overlay(self.clip_p1, speed_boom_intensity)
 
         # Draw Player 2's view
         self.screen.set_clip(self.clip_p2)
+        # Add invincibility background tint
+        if game_state.snake2.is_invincible():
+            self._draw_invincibility_background(self.clip_p2)
         self._draw_finish_line(game_state.camera_y_p2, self.clip_p2)
-        self._draw_obstacles(game_state.obstacles, game_state.camera_y_p2, self.clip_p2)
+        self._draw_obstacles(
+            game_state.obstacles,
+            game_state.camera_y_p2,
+            self.clip_p2,
+            game_state.snake2,
+        )
         self._draw_apples_for_pane(
-            game_state.apples, game_state.pane2, game_state.camera_y_p2, self.clip_p2
+            game_state.apples,
+            game_state.pane2,
+            game_state.camera_y_p2,
+            self.clip_p2,
+            game_state.snake2,
         )
         self._draw_snake(game_state.snake2, game_state.camera_y_p2, self.clip_p2)
+        # Add boom overlays
+        boom_intensity = game_state.snake2.get_boom_intensity()
+        if boom_intensity > 0:
+            self._draw_invincibility_boom_overlay(self.clip_p2, boom_intensity)
+        speed_boom_intensity = game_state.snake2.get_speed_boost_boom_intensity()
+        if speed_boom_intensity > 0:
+            self._draw_speed_boost_boom_overlay(self.clip_p2, speed_boom_intensity)
 
         # Draw divider and HUD without clipping
         self.screen.set_clip(None)
@@ -106,9 +145,15 @@ class Renderer:
             game_state.snake1,
             game_state.snake2,
             game_state.winner_text,
+            game_state.score_p1,
+            game_state.score_p2,
             fps=fps,
             is_muted=is_muted,
         )
+
+        # Draw pause overlay if paused
+        if is_paused:
+            self._draw_pause_overlay()
 
         pygame.display.flip()
 
@@ -121,20 +166,37 @@ class Renderer:
 
         # Title
         title_surface = self.title_font.render(title_text, True, TEXT_COLOR)
-        title_rect = title_surface.get_rect(center=(WIDTH // 2, HEIGHT // 3))
+        title_rect = title_surface.get_rect(center=(WIDTH // 2, HEIGHT // 4))
         self.screen.blit(title_surface, title_rect)
 
         # Subtitle
         subtitle_surface = self.font.render(subtitle_text, True, TEXT_COLOR)
         subtitle_rect = subtitle_surface.get_rect(
-            center=(WIDTH // 2, title_rect.bottom + 30)
+            center=(WIDTH // 2, title_rect.bottom + 20)
         )
         self.screen.blit(subtitle_surface, subtitle_rect)
 
-        # Layout two stacked buttons in the center area
-        button_width, button_height = 360, 70
-        spacing = 20
-        top_y = HEIGHT // 2 - button_height - spacing // 2
+        # Game instructions
+        instructions = [
+            "Race to the finish line!",
+            "P1: A/D to move left/right",
+            "P2: Arrow keys to move",
+            "Collect red apples for speed boost",
+            "Collect golden apples for invincibility",
+            "Press P to pause during game",
+        ]
+
+        y_pos = subtitle_rect.bottom + 30
+        for instruction in instructions:
+            text_surface = self.font.render(instruction, True, TEXT_COLOR)
+            text_rect = text_surface.get_rect(center=(WIDTH // 2, y_pos))
+            self.screen.blit(text_surface, text_rect)
+            y_pos += 25
+
+        # Layout two stacked buttons near the bottom
+        button_width, button_height = 360, 60
+        spacing = 15
+        top_y = y_pos + 20
 
         # Start button
         start_rect = pygame.Rect(
@@ -176,9 +238,7 @@ class Renderer:
             fps_text = self.font.render(f"{fps:05.1f} FPS", True, TEXT_COLOR)
             self.screen.blit(fps_text, (10, 10))
 
-    def _draw_customize_screen(
-        self, colors, fps: float = 0.0, is_muted: bool = False
-    ):
+    def _draw_customize_screen(self, colors, fps: float = 0.0, is_muted: bool = False):
         """Draw the player color customization screen for both players."""
         # Reset button / palette rects each frame; they will be re-created below
         self.custom_save_button_rect = None
@@ -335,6 +395,9 @@ class Renderer:
             if -1 <= screen_y <= GRID_H:
                 col = snake.head_col if i == 0 else snake.body_col
 
+                # Apply invincibility color tint
+                col = self._apply_invincibility_color(col, snake)
+
                 # Add glow effect if invincible
                 if snake.is_invincible() and i == 0:
                     glow_rect = pygame.Rect(
@@ -354,17 +417,20 @@ class Renderer:
                 if clip_rect is None or r.colliderect(clip_rect):
                     pygame.draw.rect(self.screen, col, r, border_radius=4)
 
-    def _draw_apples_for_pane(self, apples, pane, camera_y, clip_rect):
+    def _draw_apples_for_pane(self, apples, pane, camera_y, clip_rect, snake):
         """Draw apples that belong to a specific pane"""
         for apple in apples:
             if pane.inside(apple.x):
-                self._draw_apple(apple, camera_y, clip_rect)
+                self._draw_apple(apple, camera_y, clip_rect, snake)
 
-    def _draw_apple(self, apple, camera_y, clip_rect):
+    def _draw_apple(self, apple, camera_y, clip_rect, snake):
         """Draw an apple"""
         screen_y = apple.y - camera_y
         if -1 <= screen_y <= GRID_H:
             color = GOLDEN_APPLE_COLOR if apple.is_golden else RED_APPLE_COLOR
+            # Apply invincibility color tint
+            color = self._apply_invincibility_color(color, snake)
+
             center_x = apple.x * CELL + CELL // 2
             center_y = int(screen_y * CELL + CELL // 2)
 
@@ -381,7 +447,7 @@ class Renderer:
                     radius // 3,
                 )
 
-    def _draw_obstacles(self, obstacles, camera_y, clip_rect):
+    def _draw_obstacles(self, obstacles, camera_y, clip_rect, snake):
         """Draw obstacles"""
         for x, y in obstacles.blocks:
             screen_y = y - camera_y
@@ -390,9 +456,12 @@ class Renderer:
                 offset = (CELL - size) // 2
                 r = pygame.Rect(x * CELL + offset, screen_y * CELL + offset, size, size)
                 if clip_rect is None or r.colliderect(clip_rect):
-                    pygame.draw.rect(self.screen, OBSTACLE_A, r, border_radius=4)
+                    # Apply invincibility color tint
+                    color_a = self._apply_invincibility_color(OBSTACLE_A, snake)
+                    color_b = self._apply_invincibility_color(OBSTACLE_B, snake)
+                    pygame.draw.rect(self.screen, color_a, r, border_radius=4)
                     pygame.draw.rect(
-                        self.screen, OBSTACLE_B, r.inflate(-6, -6), border_radius=3
+                        self.screen, color_b, r.inflate(-6, -6), border_radius=3
                     )
 
     def _draw_finish_line(self, camera_y, clip_rect):
@@ -411,8 +480,26 @@ class Renderer:
                     )
                     pygame.draw.rect(self.screen, color, r)
 
-    def _draw_hud(self, snake1, snake2, winner_text, fps=0.0, is_muted: bool = False):
+    def _draw_hud(
+        self,
+        snake1,
+        snake2,
+        winner_text,
+        score_p1,
+        score_p2,
+        fps=0.0,
+        is_muted: bool = False,
+    ):
         """Draw the heads-up display"""
+        # Score at the top center (below FPS)
+        score_text = f"{snake1.name} vs {snake2.name}     {score_p1} - {score_p2}"
+        score_img = self.font.render(score_text, True, TEXT_COLOR)
+        score_rect = score_img.get_rect(center=(WIDTH // 2, 40))
+        # Draw background for better readability
+        bg_rect = score_rect.inflate(20, 10)
+        pygame.draw.rect(self.screen, (0, 0, 0, 180), bg_rect, border_radius=5)
+        self.screen.blit(score_img, score_rect)
+
         # Player 1 info
         p1_text = f"{snake1.name}: {snake1.apples_collected} apples"
         if snake1.active_powerup == PowerUpType.SPEED_BOOST:
@@ -420,7 +507,7 @@ class Renderer:
         elif snake1.active_powerup == PowerUpType.INVINCIBILITY:
             p1_text += " [INVINCIBLE]"
         img1 = self.font.render(p1_text, True, P1_HEAD)
-        self.screen.blit(img1, (12, 10))
+        self.screen.blit(img1, (12, 65))
 
         # Player 2 info
         p2_text = f"{snake2.name}: {snake2.apples_collected} apples"
@@ -429,11 +516,11 @@ class Renderer:
         elif snake2.active_powerup == PowerUpType.INVINCIBILITY:
             p2_text += " [INVINCIBLE]"
         img2 = self.font.render(p2_text, True, P2_HEAD)
-        self.screen.blit(img2, (WIDTH - img2.get_width() - 12, 10))
+        self.screen.blit(img2, (WIDTH - img2.get_width() - 12, 65))
 
         # Controls
         controls = self.font.render(
-            "P1: A/D   P2: ◀/▶   R: restart   ESC: quit", True, TEXT_COLOR
+            "P1: A/D   P2: ◀/▶   P: pause   R: restart   ESC: quit", True, TEXT_COLOR
         )
         self.screen.blit(controls, (12, HEIGHT - 30))
 
@@ -487,3 +574,91 @@ class Renderer:
             inner.y + (inner.height - text_surf.get_height()) // 2,
         )
         self.screen.blit(text_surf, text_pos)
+
+    def _apply_invincibility_color(self, base_color, snake):
+        """
+        Apply golden color tint when invincible
+
+        Args:
+            base_color: Original RGB color tuple
+            snake: Snake object to check for invincibility
+
+        Returns:
+            Modified RGB color tuple with golden tint if invincible
+        """
+        if not snake.is_invincible():
+            return base_color
+
+        golden = (255, 215, 0)
+        boom_intensity = snake.get_boom_intensity()
+
+        # During boom, apply stronger tint (70%), otherwise moderate tint (30%)
+        if boom_intensity > 0:
+            blend = 0.7 * boom_intensity
+        else:
+            blend = 0.3
+
+        # Blend base color with golden
+        r = int(base_color[0] * (1 - blend) + golden[0] * blend)
+        g = int(base_color[1] * (1 - blend) + golden[1] * blend)
+        b = int(base_color[2] * (1 - blend) + golden[2] * blend)
+
+        return (min(255, r), min(255, g), min(255, b))
+
+    def _draw_invincibility_background(self, clip_rect):
+        """
+        Draw subtle golden background tint for invincibility
+
+        Args:
+            clip_rect: Rectangle defining the pane area
+        """
+        background = pygame.Surface((clip_rect.width, clip_rect.height))
+        background.set_alpha(25)  # Very subtle
+        background.fill((255, 215, 0))  # Golden
+        self.screen.blit(background, (clip_rect.x, clip_rect.y))
+
+    def _draw_invincibility_boom_overlay(self, clip_rect, intensity):
+        """
+        Draw golden boom overlay effect
+
+        Args:
+            clip_rect: Rectangle defining the pane area
+            intensity: Effect intensity from 0.0 to 1.0
+        """
+        overlay = pygame.Surface((clip_rect.width, clip_rect.height))
+        overlay.set_alpha(int(160 * intensity))  # Fade from 160 to 0
+        overlay.fill((255, 215, 0))  # Golden
+        self.screen.blit(overlay, (clip_rect.x, clip_rect.y))
+
+    def _draw_speed_boost_boom_overlay(self, clip_rect, intensity):
+        """
+        Draw red boom overlay effect for speed boost
+
+        Args:
+            clip_rect: Rectangle defining the pane area
+            intensity: Effect intensity from 0.0 to 1.0
+        """
+        overlay = pygame.Surface((clip_rect.width, clip_rect.height))
+        overlay.set_alpha(int(120 * intensity))  # Fade from 120 to 0
+        overlay.fill((255, 50, 50))  # Red
+        self.screen.blit(overlay, (clip_rect.x, clip_rect.y))
+
+    def _draw_pause_overlay(self):
+        """Draw pause overlay with semi-transparent background and text"""
+        # Semi-transparent overlay
+        overlay = pygame.Surface((WIDTH, HEIGHT))
+        overlay.set_alpha(128)
+        overlay.fill((0, 0, 0))
+        self.screen.blit(overlay, (0, 0))
+
+        # Pause text
+        pause_text = "PAUSED"
+        pause_surf = self.title_font.render(pause_text, True, TEXT_COLOR)
+        pause_rect = pause_surf.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 30))
+        self.screen.blit(pause_surf, pause_rect)
+
+        # Instructions
+        resume_text = "Press P to resume"
+        resume_surf = self.banner_sub_font.render(resume_text, True, TEXT_COLOR)
+        resume_rect = resume_surf.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 30))
+        self.screen.blit(resume_surf, resume_rect)

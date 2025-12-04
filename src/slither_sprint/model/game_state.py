@@ -13,10 +13,6 @@ from config import (
     PANE1_X1,
     PANE2_X0,
     PANE2_X1,
-    P1_COLOR,
-    P1_HEAD,
-    P2_COLOR,
-    P2_HEAD,
     OBSTACLE_SEED,
     GOLDEN_APPLE_SPAWN_CHANCE,
 )
@@ -38,6 +34,10 @@ class GameState:
         self.camera_y_p2 = 0.0
         self.winner_text = None
         self.minigame_triggered = False
+
+        # Score tracking (persists across rounds)
+        self.score_p1 = 0
+        self.score_p2 = 0
 
         self.reset()
 
