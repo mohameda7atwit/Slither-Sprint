@@ -24,6 +24,7 @@ class TestSnake(unittest.TestCase):
         pygame.init()
         # Small delay to ensure pygame clock starts
         import time
+
         time.sleep(0.01)
 
     @classmethod
@@ -108,12 +109,15 @@ class TestSnake(unittest.TestCase):
         self.assertFalse(self.snake.is_invincible())
         self.snake.collect_golden_apple()
         self.assertTrue(self.snake.is_invincible())
-        self.assertEqual(self.snake.active_powerup.value, PowerUpType.INVINCIBILITY.value)
+        self.assertEqual(
+            self.snake.active_powerup.value, PowerUpType.INVINCIBILITY.value
+        )
 
     def test_snake_speed_boost_increases_speed(self):
         """Test speed boost reduces step time"""
         # Ensure pygame clock has started
         import time
+
         time.sleep(0.01)
 
         base_step_ms = self.snake.base_step_ms
@@ -179,6 +183,7 @@ class TestSnake(unittest.TestCase):
 
         # Simulate 150ms passing (half the duration)
         import time
+
         time.sleep(0.15)
 
         later_intensity = self.snake.get_boom_intensity()
@@ -191,6 +196,7 @@ class TestSnake(unittest.TestCase):
 
         # Simulate 350ms passing (more than duration)
         import time
+
         time.sleep(0.35)
 
         intensity = self.snake.get_boom_intensity()
@@ -216,6 +222,7 @@ class TestSnake(unittest.TestCase):
 
         # Wait for boom to end
         import time
+
         time.sleep(0.35)
 
         # Boom should be over
@@ -226,6 +233,7 @@ class TestSnake(unittest.TestCase):
     def test_warning_pulses_for_invincibility(self):
         """Test warning pulses appear when power-up is about to expire"""
         import time
+
         time.sleep(0.01)
 
         # Activate power-up, then wait until near expiration
@@ -243,6 +251,7 @@ class TestSnake(unittest.TestCase):
     def test_warning_pulses_for_speed_boost(self):
         """Test warning pulses appear for speed boost power-up"""
         import time
+
         time.sleep(0.01)
 
         # Activate power-up, then wait until near expiration
@@ -260,6 +269,7 @@ class TestSnake(unittest.TestCase):
     def test_no_warning_pulses_when_powerup_not_expiring(self):
         """Test no warning pulses when power-up has plenty of time left"""
         import time
+
         time.sleep(0.01)
 
         current_time = pygame.time.get_ticks()

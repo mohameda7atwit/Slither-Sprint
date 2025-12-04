@@ -65,7 +65,10 @@ class GameController:
                 continue
 
             # Update game only when playing (not paused or in menus)
-            if self.game_mode == GameMode.PLAYING and self.game_state.winner_text is None:
+            if (
+                self.game_mode == GameMode.PLAYING
+                and self.game_state.winner_text is None
+            ):
                 self._update_game(dt)
 
             # Handle resuming music after one-shot effects
@@ -225,6 +228,7 @@ class GameController:
 
     def _handle_customize_keys(self, key):
         """Handle key events while in the customization menu."""
+
         # Helpers to cycle through shared color presets for each player
         def cycle_for(player_key: str, direction: int):
             current_body = tuple(self.custom_colors[player_key]["body"])

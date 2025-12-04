@@ -25,6 +25,7 @@ class TestRenderer(unittest.TestCase):
         pygame.init()
         # Small delay to ensure pygame clock starts
         import time
+
         time.sleep(0.01)
 
     @classmethod
@@ -37,7 +38,9 @@ class TestRenderer(unittest.TestCase):
         screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.renderer = Renderer(screen)
         self.pane = Pane(0, 20)
-        self.snake = Snake(self.pane, 10, 10, (100, 200, 100), (150, 250, 150), "TestSnake")
+        self.snake = Snake(
+            self.pane, 10, 10, (100, 200, 100), (150, 250, 150), "TestSnake"
+        )
 
     def test_no_color_change_when_not_invincible(self):
         """Test color remains unchanged when snake is not invincible"""
@@ -49,6 +52,7 @@ class TestRenderer(unittest.TestCase):
         """Test color gets golden tint when invincible"""
         # Ensure pygame clock has started
         import time
+
         time.sleep(0.01)
 
         # Use activate_powerup to properly set everything
@@ -69,6 +73,7 @@ class TestRenderer(unittest.TestCase):
         """Test color tint is stronger during boom effect"""
         # Ensure pygame clock has started
         import time
+
         time.sleep(0.01)
 
         base_color = (100, 100, 200)
@@ -82,7 +87,9 @@ class TestRenderer(unittest.TestCase):
         time.sleep(0.35)
 
         # Get color after boom (30% persistent tint)
-        post_boom_color = self.renderer._apply_invincibility_color(base_color, self.snake)
+        post_boom_color = self.renderer._apply_invincibility_color(
+            base_color, self.snake
+        )
 
         # Both should be different from base
         self.assertNotEqual(boom_color, base_color)
@@ -115,6 +122,7 @@ class TestRenderer(unittest.TestCase):
         """Test golden blend is proportional to boom intensity"""
         # Ensure pygame clock has started
         import time
+
         time.sleep(0.01)
 
         base_color = (100, 50, 150)
@@ -134,6 +142,7 @@ class TestRenderer(unittest.TestCase):
         """Test even black gets a golden tint when invincible"""
         # Ensure pygame clock has started and give it a moment
         import time
+
         time.sleep(0.02)
 
         base_color = (0, 0, 0)
@@ -146,13 +155,23 @@ class TestRenderer(unittest.TestCase):
 
         # Verify boom is active
         boom_intensity = self.snake.get_boom_intensity()
-        self.assertGreater(boom_intensity, 0, "Boom should be active immediately after activation")
+        self.assertGreater(
+            boom_intensity, 0, "Boom should be active immediately after activation"
+        )
 
         result = self.renderer._apply_invincibility_color(base_color, self.snake)
 
         # Should have significant golden color added (70% blend during boom)
-        self.assertGreater(result[0], 0, f"Red component should be > 0, got {result[0]}, boom_intensity={boom_intensity}")
-        self.assertGreater(result[1], 0, f"Green component should be > 0, got {result[1]}, boom_intensity={boom_intensity}")
+        self.assertGreater(
+            result[0],
+            0,
+            f"Red component should be > 0, got {result[0]}, boom_intensity={boom_intensity}",
+        )
+        self.assertGreater(
+            result[1],
+            0,
+            f"Green component should be > 0, got {result[1]}, boom_intensity={boom_intensity}",
+        )
 
     def test_white_color_stays_near_white(self):
         """Test white color remains bright when invincible"""
@@ -177,6 +196,7 @@ class TestRenderer(unittest.TestCase):
 
         # Simulate time passing
         import time
+
         time.sleep(0.01)  # Small delay to ensure time advances
 
         # Deactivate

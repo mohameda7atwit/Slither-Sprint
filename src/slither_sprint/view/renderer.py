@@ -86,9 +86,18 @@ class Renderer:
         if game_state.snake1.is_invincible():
             self._draw_invincibility_background(self.clip_p1)
         self._draw_finish_line(game_state.camera_y_p1, self.clip_p1)
-        self._draw_obstacles(game_state.obstacles, game_state.camera_y_p1, self.clip_p1, game_state.snake1)
+        self._draw_obstacles(
+            game_state.obstacles,
+            game_state.camera_y_p1,
+            self.clip_p1,
+            game_state.snake1,
+        )
         self._draw_apples_for_pane(
-            game_state.apples, game_state.pane1, game_state.camera_y_p1, self.clip_p1, game_state.snake1
+            game_state.apples,
+            game_state.pane1,
+            game_state.camera_y_p1,
+            self.clip_p1,
+            game_state.snake1,
         )
         self._draw_snake(game_state.snake1, game_state.camera_y_p1, self.clip_p1)
         # Add boom overlays
@@ -105,9 +114,18 @@ class Renderer:
         if game_state.snake2.is_invincible():
             self._draw_invincibility_background(self.clip_p2)
         self._draw_finish_line(game_state.camera_y_p2, self.clip_p2)
-        self._draw_obstacles(game_state.obstacles, game_state.camera_y_p2, self.clip_p2, game_state.snake2)
+        self._draw_obstacles(
+            game_state.obstacles,
+            game_state.camera_y_p2,
+            self.clip_p2,
+            game_state.snake2,
+        )
         self._draw_apples_for_pane(
-            game_state.apples, game_state.pane2, game_state.camera_y_p2, self.clip_p2, game_state.snake2
+            game_state.apples,
+            game_state.pane2,
+            game_state.camera_y_p2,
+            self.clip_p2,
+            game_state.snake2,
         )
         self._draw_snake(game_state.snake2, game_state.camera_y_p2, self.clip_p2)
         # Add boom overlays
@@ -220,9 +238,7 @@ class Renderer:
             fps_text = self.font.render(f"{fps:05.1f} FPS", True, TEXT_COLOR)
             self.screen.blit(fps_text, (10, 10))
 
-    def _draw_customize_screen(
-        self, colors, fps: float = 0.0, is_muted: bool = False
-    ):
+    def _draw_customize_screen(self, colors, fps: float = 0.0, is_muted: bool = False):
         """Draw the player color customization screen for both players."""
         # Reset button / palette rects each frame; they will be re-created below
         self.custom_save_button_rect = None
@@ -464,7 +480,16 @@ class Renderer:
                     )
                     pygame.draw.rect(self.screen, color, r)
 
-    def _draw_hud(self, snake1, snake2, winner_text, score_p1, score_p2, fps=0.0, is_muted: bool = False):
+    def _draw_hud(
+        self,
+        snake1,
+        snake2,
+        winner_text,
+        score_p1,
+        score_p2,
+        fps=0.0,
+        is_muted: bool = False,
+    ):
         """Draw the heads-up display"""
         # Score at the top center (below FPS)
         score_text = f"{snake1.name} vs {snake2.name}     {score_p1} - {score_p2}"
