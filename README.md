@@ -26,19 +26,26 @@ Players compete head-to-head, each controlling a snake that climbs upward in its
 | Player 2    | ← (Left)  | → (Right)  |
 
 Other:
-- `R` — Restart the game
+- `R` — Restart the gam
+- `P` - Pause
 - `ESC` — Quit
 
 ## Requirements
 - Python 3.10+
 - Pygame
+- uv
+
+## Install uv: 
+
+https://docs.astral.sh/uv/getting-started/installation/
+
 
 ## Setup
 
 Install dependencies (recommended):
 
 ```bash
-uv pip install -r requirements.txt
+uv sync
 ```
 or
 ```bash
@@ -46,6 +53,13 @@ pip install -r requirements.txt
 ```
 
 ## How to Run
+There are two ways to run the game. The game comes packaged with an executable called SlitherSprintGame.
+
+> **NOTE:** The executable will only work on MacOS and Linux systems, if you are on windows skip this step.
+
+To run the game simply run that file as you would with any other application. 
+
+If for whatever reason you are having issues running that file you can run the game directly like the following: 
 
 You can run the game using the Makefile:
 
@@ -56,7 +70,7 @@ make run
 Or directly with uv:
 
 ```bash
-uv run slither-sprint
+PYTHONPATH=./src/slither_sprint uv run slither-sprint
 ```
 
 ## Code Formatting
@@ -73,6 +87,14 @@ Check code style and lint with Ruff (via uv):
 
 ```bash
 make lint
+```
+
+## Testing
+
+To run the test suite with pytest run: 
+
+```bash
+make test
 ```
 
 ## Deploying the Game

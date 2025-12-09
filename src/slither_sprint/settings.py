@@ -16,14 +16,14 @@ Color = Tuple[int, int, int]
 
 # Preset color pairs (body, head) that both players can choose from
 COLOR_PRESETS: Tuple[Tuple[Color, Color], ...] = (
-    ((40, 220, 120), (20, 255, 160)),   # bright green
+    ((40, 220, 120), (20, 255, 160)),  # bright green
     ((80, 150, 255), (120, 200, 255)),  # blue
     ((255, 120, 80), (255, 180, 140)),  # orange
     ((200, 80, 200), (240, 160, 240)),  # purple
     ((255, 220, 60), (255, 255, 140)),  # yellow
     ((80, 255, 200), (160, 255, 230)),  # aqua
-    ((255, 100, 190), (255, 170, 220)), # pink
-    ((160, 120, 255), (210, 180, 255)), # violet
+    ((255, 100, 190), (255, 170, 220)),  # pink
+    ((160, 120, 255), (210, 180, 255)),  # violet
     ((120, 220, 60), (190, 255, 120)),  # lime
     ((255, 180, 60), (255, 220, 120)),  # gold
 )
@@ -78,5 +78,3 @@ def save_player_colors(colors: Dict[str, Dict[str, Color]]) -> None:
     except Exception:
         # Failing to save settings should not crash the game
         pass
-
-
